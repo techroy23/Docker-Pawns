@@ -10,6 +10,16 @@ log() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') $*"
 }
 
+if [ -z "${EMAIL:-}" ]; then
+  log " >>> An2Kin >>> ERROR: EMAIL environment variable is not set."
+  exit 1
+fi
+
+if [ -z "${PASSWORD:-}" ]; then
+  log " >>> An2Kin >>> ERROR: PASSWORD environment variable is not set."
+  exit 1
+fi
+
 arch=$(uname -m)
 case "$arch" in
   x86_64)
@@ -98,23 +108,18 @@ check_ip() {
   fi
 }
 
-if [ -z "${EMAIL:-}" ]; then
-  log " >>> An2Kin >>> ERROR: EMAIL environment variable is not set."
-  exit 1
-fi
+main() {
+  while true; do
+      setup_proxy
+      check_ip
+      log " >>> An2Kin >>> Starting binary..."
+      "$BIN_SDK" -email=$EMAIL -password=$PASSWORD -accept-tos &
+      PID=$!
+      log " >>> An2Kin >>> APP PID is $PID"
+      wait $PID
+      log " >>> An2Kin >>> Process exited, restarting..."
+      sleep 5
+  done
+}
 
-if [ -z "${PASSWORD:-}" ]; then
-  log " >>> An2Kin >>> ERROR: PASSWORD environment variable is not set."
-  exit 1
-fi
-
-while true; do
-    setup_proxy
-    check_ip
-    log " >>> An2Kin >>> Starting binary..."
-    $BIN_SDK -email=$EMAIL -password=$PASSWORD -accept-tos &
-    PID=$!
-    log " >>> An2Kin >>> APP PID is $PID"
-    wait $PID
-    log " >>> An2Kin >>> Process exited, restarting..."
-done
+main
